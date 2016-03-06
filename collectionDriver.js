@@ -76,7 +76,7 @@ CollectionDriver.prototype.update = function(collectionName, obj, id, callback) 
                 if(error)
                     callback(error);
                 else
-                    callback(null, result);
+                    callback(null, obj);
             });
         }
     });
@@ -87,12 +87,11 @@ CollectionDriver.prototype.delete = function(collectionName, id, callback) {
         if(error)
             callback(error);
         else {
-            collection.remove({ '_id': id }, function(error, result) {
+            collection.remove({ '_id': ObjectID(id) }, function(error, result) {
                 if(error)
                     callback(error);
-                else {
-                    callback(result);
-                }
+                else
+                    callback(null, result);
             });
         }
     });

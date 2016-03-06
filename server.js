@@ -48,7 +48,9 @@ app.get('/:collection', function(req, res) {
                 });
             } else {
                 res.set('Content-Type', 'application/json');
-                res.send(200, results);
+                res.send(200, {
+		    data: results
+                });
             }
         }
     });
@@ -88,11 +90,12 @@ app.get('/:collection/:entity', function(req, res) {
 
 app.put('/:collection/:entity', function(req, res) {
     var params = req.params;
+    var body = req.body;
     var collection = params.collection;
     var entity = params.entity;
 
     if(entity) {
-        collectionDriver.update(collection, entity, function(error, result) {
+        collectionDriver.update(collection, body, entity, function(error, result) {
             if(error)
                 res.send(400, error);
             else
