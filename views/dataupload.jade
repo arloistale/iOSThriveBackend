@@ -12,12 +12,14 @@ body
   #objects
     table(border=1)
       if objects.length > 0
+        th ID
         th Type
         th Date
         th Link
 
       - each obj in objects
         tr.obj
+            td.key= obj._id
             td.key= obj.ext
             td.key= obj.created_at
             td
