@@ -1,0 +1,15 @@
+body
+  h1= "Files"
+  form(action="/photos", method="post", enctype="multipart/form-data")
+    input(type="file", name="image")
+    input(type="submit")
+
+  #objects
+    table(border=1)
+      if objects.length > 0
+        - each val, key in objects[0]
+          th= key
+      - each obj in objects
+        tr.obj
+          - each val, key in obj
+            td.key= val
