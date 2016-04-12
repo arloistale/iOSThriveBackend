@@ -38,6 +38,17 @@ app.use(express.bodyParser());
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+app.get('/', function(req, res) {
+    var params = req.params;
+
+    if(req.accepts('html')) {
+        res.render('home');
+    } else {
+        res.set('Content-Type', 'application/json');
+        res.send(403, {});
+    }
+});
+
 app.get('/photos', function(req, res) {
     var params = req.params;
     

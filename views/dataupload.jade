@@ -1,5 +1,10 @@
 body
-  h1= "Files"
+  h1 Photos
+
+  p
+    a(class="btn-back", href="../") Back
+
+  p Submit a new photo:
   form(action="/photos", method="post", enctype="multipart/form-data")
     input(type="file", name="image")
     input(type="submit")
@@ -7,9 +12,13 @@ body
   #objects
     table(border=1)
       if objects.length > 0
-        - each val, key in objects[0]
-          th= key
+        th Type
+        th Date
+        th Link
+
       - each obj in objects
         tr.obj
-          - each val, key in obj
-            td.key= val
+            td.key= obj.ext
+            td.key= obj.created_at
+            td
+              a(class = "btn-to", href="photos/" + obj._id) View
