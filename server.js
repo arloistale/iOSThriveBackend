@@ -1,4 +1,6 @@
 var express = require('express'),
+    multer = require('multer'),
+    bodyParser = require('body-parser'),
     path = require('path'),
     mongodb = require('mongodb');
 
@@ -14,8 +16,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 // set up mongodb
-var mongoHost = 'localHost';
-var mongoPort = 27017;
 var fileDriver;
 var collectionDriver;
 
@@ -32,21 +32,36 @@ MongoClient.connect(uri, function(err, db) {
     collectionDriver = new CollectionDriver(db);
 });
 
-// configure app
-app.use(express.bodyParser());
-//app.use(multer({ dest: './uploads' }));
+// set up bodyParser
+
+app.use(bodyParser.json());                        
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// set up multer
+var upload = multer({ dest: 'uploads/' });
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.get('/', function(req, res) {
     var params = req.params;
+    
+    // the home page renders a card list
+    collectionDriver.findAll(collection, function(error, results) {
+        console.log(results);
+        if(error)
+            res.send(400, error);
+        else {
+            if(req.accepts('html')) {
+                res.render('home', {
+                    objects: results,
+                });
+            } else {
+                res.set('Content-Type', 'application/json');
+                res.send(403, {});
+            }
+        }
+    });
 
-    if(req.accepts('html')) {
-        res.render('home');
-    } else {
-        res.set('Content-Type', 'application/json');
-        res.send(403, {});
-    }
 });
 
 app.get('/photos', function(req, res) {
@@ -73,20 +88,20 @@ app.post('/photos', function(req, res) {
 });
 
 app.get('/photos/:id', function(req, res) {
+    console.log("uh");
     fileDriver.handleGet(req, res); 
 });
 
 app.get('/cards', function(req, res) {
     var params = req.params;
-    console.log("Loading from " + collection);
+    
     collectionDriver.findAll(collection, function(error, results) {
         if(error)
             res.send(400, error);
         else {
             if(req.accepts('html')) {
-                res.render('data', {
+                res.render('home', {
                     objects: results,
-                    collection: req.params.collection
                 });
             } else {
                 var responseObject = {
@@ -99,17 +114,28 @@ app.get('/cards', function(req, res) {
     });
 });
 
-app.post('/cards', function(req, res) {
+app.post('/cards', upload.single('image'), function(req, res) {
     var obj = req.body;
-    
-    collectionDriver.save(collection, obj, function(error, result) {
-        if(error)
-            res.send(400, error);
+    console.log(req);
+    // TODO: make sure to block post requests from native apps
+
+    // poll until file saved
+    fileDriver.handleUploadRequest(req, res, function(id, err) {
+        if (err)
+            res.send(500, err);
         else {
-            if(req.accepts('html'))
-                res.redirect('/cards');
-            else
-                res.send(201, result);
+            obj.photoId = id;
+
+            collectionDriver.save(collection, obj, function(error, result) {
+                if(error)
+                    res.send(400, error);
+                else {
+                    if(req.accepts('html'))
+                        res.redirect('/cards');
+                    else
+                        res.send(201, result);
+                }
+            });
         }
     });
 });

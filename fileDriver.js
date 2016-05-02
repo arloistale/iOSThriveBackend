@@ -1,5 +1,7 @@
 var ObjectID = require('mongodb').ObjectID;
 var fs = require('fs');
+var path = require('path');
+var express = require('express');
 
 FileDriver = function(db) {
     this.db = db;
@@ -67,36 +69,48 @@ FileDriver.prototype.handleGet = function(req, res) {
     var id = req.params.id;
 
     if(!id)
-        res.send(404, 'file not found');
+        res.status(404).send('file not found');
     else {
         this.get(id, function(error, result) {
             if(error)
-                res.send(400, error);
+                res.status(400).send(error);
             else {
                 if(!result)
                     res.send(404, 'file not found');
                 else {
                     var fname = id + result.ext;
-                    var path = './uploads/' + fname;
-                    res.sendfile(path);
+
+                    var options = {
+                        root: __dirname + "/uploads/",
+                        dotfiles: 'allow',
+                        headers: {
+                            'x-timestamp': Date.now(),
+                            'x-sent': true
+                        }
+                    };
+
+                    res.sendFile(fname, options, function(err) {
+                        if(err) {
+                            console.log(err);
+                            //res.status(err.status).end();
+                        } else
+                            console.log("successfully got file: " + fname);
+                    });
                 }
             }
         });
     }
 };
 
-FileDriver.prototype.handleUploadRequest = function(req, res) {
-
-    var image = req.files.image;
-
-    var contentType = image.type;//req.get("content-type");
+FileDriver.prototype.handleUploadRequest = function(req, res, callback) {
+    var image = req.file; 
+    console.log(image);
+    var contentType = image.mimetype;
     var ext = contentType.substr(contentType.indexOf('/') + 1);
     if(ext)
         ext = '.' + ext;
     else
         ext = '';
-
-    var that = this;
 
     this.save({
         'content-type': contentType,
@@ -106,38 +120,16 @@ FileDriver.prototype.handleUploadRequest = function(req, res) {
             res.send(400, error);
         else {
             var id = result._id;
+            console.log("id: " + id);
             var fname = id + ext;
-            var path = __dirname + "/uploads/" + fname;
 
             fs.readFile( image.path, function (err, data) {
                 if(err)
                     res.send(500, err);
                 else {
-                    fs.writeFile(path, data, function (err) {
-                        if (err)
-                            res.send(500, err);
-                        else {
-                            if(req.accepts('html')) {
-                                that.findAll(function(error, results) {
-                                    if(error)
-                                        res.send(400, error);
-                                    else {
-                                        if(req.accepts('html')) {
-                                            res.render('dataupload', {
-                                                objects: results
-                                            });
-                                        } else {
-                                            res.set('Content-Type', 'application/json');
-                                            res.send(403, {});
-                                        }
-                                    }
-                                });
-                            } else {
-                                res.set('Content-Type', 'application/json');
-                                res.send(201, {'_id': id});
-                            }
-                        }
-                    });
+                    fs.writeFile(path.resolve(__dirname + "/uploads/" + fname), data, function (err) {
+                        callback(id, err);                       
+                   });
                 }
             });
         }
