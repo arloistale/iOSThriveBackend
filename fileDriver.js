@@ -103,8 +103,8 @@ FileDriver.prototype.handleGet = function(req, res) {
 };
 
 FileDriver.prototype.handleUploadRequest = function(req, res, callback) {
-    var image = req.file; 
-    console.log(image);
+    var image = req.file;
+
     var contentType = image.mimetype;
     var ext = contentType.substr(contentType.indexOf('/') + 1);
     if(ext)
@@ -120,7 +120,7 @@ FileDriver.prototype.handleUploadRequest = function(req, res, callback) {
             res.send(400, error);
         else {
             var id = result._id;
-            console.log("id: " + id);
+
             var fname = id + ext;
 
             fs.readFile( image.path, function (err, data) {

@@ -20,5 +20,8 @@ body
           td.key= obj._id
           td.key= obj.created_at
           td
-            img(src='photos/' + obj.photoId)
-          td.key= obj.message          
+            if obj.photoId
+              img(src='photos/' + obj.photoId)
+            else
+              p No Photo
+          td.key= obj.message

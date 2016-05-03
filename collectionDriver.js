@@ -78,21 +78,22 @@ CollectionDriver.prototype.getRandom = function(collectionName, callback) {
         if(error)
             callback(error);
         else {
-            var mCollection = collection;
-            mCollection.count(function(err, count) {
+            collection.count(function(err, count) {
                 if(err)
                     callback(err);
                 else {
                     var rand = Math.floor(Math.random() * count);
-                    console.log(mCollection);
-                    mCollection.findOne().skip(rand).exec(function(error, result) {
+                    this.find({}).skip(rand).limit(1).toArray(function(error, results) {
                         if(error)
                             callback(error);
-                        else
-                            callback(null, result);
+                        else if(!results.length) {
+                            callback(null, null)
+                        } else {
+                            callback(null, results[0]);
+                        }
                     });
                 }
-            });
+            }.bind(collection));
         }
     });
 };

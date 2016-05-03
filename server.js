@@ -66,15 +66,17 @@ app.get('/', function(req, res) {
 app.get('/lucky', function(req, res) {
     collectionDriver.getRandom(collection, function(err, result) {
         if(err)
-            res.send(400, err);
-        else {
+            res.status(400).send(err);
+        else if(!result) {
+            res.status(404).send("Couldn't get a lucky record!");
+        } else {
             if(req.accepts('html')) {
                 res.render('home', {
                     objects: [result]
                 });
             } else {
                 res.set('Content-Type', 'application/json');
-                res.send(200, { data: result });
+                res.status(200).send({ data: result });
             }
         }
     }); 
@@ -85,7 +87,7 @@ app.get('/photos', function(req, res) {
     
     fileDriver.findAll(function(error, results) {
         if(error)
-            res.send(400, error);
+            res.status(400).send(error);
         else {
             if(req.accepts('html')) {
                 res.render('dataupload', {
@@ -93,7 +95,7 @@ app.get('/photos', function(req, res) {
                 });
             } else {
                 res.set('Content-Type', 'application/json');
-                res.send(403, {});
+                res.status(403).send({});
             }
         }
     });
@@ -104,8 +106,16 @@ app.post('/photos', function(req, res) {
 });
 
 app.get('/photos/:id', function(req, res) {
-    console.log("uh");
-    fileDriver.handleGet(req, res); 
+    var id = req.params.id;
+
+    if (id) {
+        fileDriver.handleGet(req, res);
+    } else {
+        var error = {
+            message: "Bad URL: " + req.url
+        };
+        res.status(400).send(error);
+    }
 });
 
 app.get('/cards', function(req, res) {
@@ -113,7 +123,7 @@ app.get('/cards', function(req, res) {
     
     collectionDriver.findAll(collection, function(error, results) {
         if(error)
-            res.send(400, error);
+            res.status(400).send(error);
         else {
             if(req.accepts('html')) {
                 res.render('home', {
@@ -124,7 +134,7 @@ app.get('/cards', function(req, res) {
                     data: results
                 };
                 res.set('Content-Type', 'application/json');
-                res.send(200, responseObject);
+                res.status(200).send(responseObject);
             }
         }
     });
@@ -132,24 +142,24 @@ app.get('/cards', function(req, res) {
 
 app.post('/cards', upload.single('image'), function(req, res) {
     var obj = req.body;
-    console.log(req);
+
     // TODO: make sure to block post requests from native apps
 
     // poll until file saved
     fileDriver.handleUploadRequest(req, res, function(id, err) {
         if (err)
-            res.send(500, err);
+            res.status(500).send(err);
         else {
             obj.photoId = id;
 
             collectionDriver.save(collection, obj, function(error, result) {
                 if(error)
-                    res.send(400, error);
+                    res.status(400).send(error);
                 else {
                     if(req.accepts('html'))
                         res.redirect('/cards');
                     else
-                        res.send(201, result);
+                        res.status(201).send(result);
                 }
             });
         }
@@ -163,7 +173,7 @@ app.get('/cards/:id', function(req, res) {
     if(id) {
         collectionDriver.get(collection, id, function(error, results) {
             if(error)
-                res.send(400, error);
+                res.status(400).send(error);
             else
                 res.send(200, results);
         });
