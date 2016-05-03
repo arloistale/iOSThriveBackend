@@ -47,7 +47,6 @@ app.get('/', function(req, res) {
     
     // the home page renders a card list
     collectionDriver.findAll(collection, function(error, results) {
-        console.log(results);
         if(error)
             res.send(400, error);
         else {
@@ -62,6 +61,23 @@ app.get('/', function(req, res) {
         }
     });
 
+});
+
+app.get('/lucky', function(req, res) {
+    collectionDriver.getRandom(collection, function(err, result) {
+        if(err)
+            res.send(400, err);
+        else {
+            if(req.accepts('html')) {
+                res.render('home', {
+                    objects: [result]
+                });
+            } else {
+                res.set('Content-Type', 'application/json');
+                res.send(200, { data: result });
+            }
+        }
+    }); 
 });
 
 app.get('/photos', function(req, res) {
